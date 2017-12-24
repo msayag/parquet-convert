@@ -1,0 +1,9 @@
+message PopulationRecord {
+  required binary location;
+  required binary indicator;
+  required binary subject;
+  required binary measure;
+  required binary frequency;
+  required int32 time;
+  required double value;
+}

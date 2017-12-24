@@ -1,0 +1,34 @@
+group 'Parquet'
+version '1.0-SNAPSHOT'
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'org.junit.platform:junit-platform-gradle-plugin:1.0.2'
+    }
+}
+
+apply plugin: 'java'
+apply plugin: 'org.junit.platform.gradle.plugin'
+
+sourceCompatibility = 9
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile group: 'org.apache.parquet', name: 'parquet-tools', version: '1.9.0'
+    compile group: 'org.apache.hadoop', name: 'hadoop-common', version: '2.9.0'
+
+    compile group: 'org.kitesdk', name: 'kite-data-core', version: '1.1.0'
+    compile group: 'com.beust', name: 'jcommander', version: '1.72'
+    compile group: 'org.apache.parquet', name: 'parquet-avro', version: '1.9.0'
+    compile group: 'org.apache.parquet', name: 'parquet-common', version: '1.9.0'
+    compile group: 'com.opencsv', name: 'opencsv', version: '4.1'
+
+    testCompile("org.junit.jupiter:junit-jupiter-api:5.0.2")
+    testRuntime("org.junit.jupiter:junit-jupiter-engine:5.0.2")
+}
