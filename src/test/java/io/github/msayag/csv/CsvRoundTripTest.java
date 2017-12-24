@@ -34,7 +34,8 @@ class CsvRoundTripTest {
         File csvInputFile = new File(classLoader.getResource("samples/oecdpop.csv").getFile());
         String tmpFilePrefix = File.createTempFile("popFromCsv", "").getAbsolutePath();
         String parquetTmpFile = tmpFilePrefix + ".parquet";
-        Schema schema = new ParquetUtil().getAvroSchema("/Users/sayag/Documents/oecdpop/oecdpop.1.avsc");
+        String schemaFile = classLoader.getResource("samples/oecdpop.avsc").getFile();
+        Schema schema = new ParquetUtil().getAvroSchema(schemaFile);
         new CsvToParquetConverter().convert(csvInputFile.getAbsolutePath(), true, parquetTmpFile, schema, CompressionCodecName.GZIP);
         String csvOutputFile = tmpFilePrefix + ".csv";
         System.out.println("parquetTmpFile: " + parquetTmpFile);
