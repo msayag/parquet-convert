@@ -1,0 +1,13 @@
+{
+    "type":"record",
+    "name":"PopulationRecord",
+    "fields":[
+        {"name":"location","type":"bytes"},
+        {"name":"indicator","type":"bytes"},
+        {"name":"subject","type":"bytes"},
+        {"name":"measure","type":"bytes"},
+        {"name":"frequency","type":"bytes"},
+        {"name":"time","type":"int"},
+        {"name":"value","type":"double"}
+    ]
+}
