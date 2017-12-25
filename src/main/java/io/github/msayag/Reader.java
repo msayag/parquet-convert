@@ -17,20 +17,12 @@
  * under the License.
  */
 
-package io.github.msayag.json;
-
-import io.github.msayag.ParquetReader;
-import io.github.msayag.ParquetWriter;
-import org.apache.avro.Schema;
-import org.apache.parquet.hadoop.metadata.CompressionCodecName;
+package io.github.msayag;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-public class JsonToParquetConverter {
-    public void convert(String jsonFile, String outputParquetFile, Schema schema, CompressionCodecName codec) throws IOException {
-        List<Map<String, Object>> records = new ParquetReader().read(jsonFile);
-        new ParquetWriter().write(records, outputParquetFile, schema, codec);
-    }
+public interface Reader {
+    List<Map<String, Object>> read(String inputFile) throws IOException;
 }

@@ -20,7 +20,9 @@
 package io.github.msayag.csv;
 
 import io.github.msayag.AvroSchemaExtractor;
+import io.github.msayag.parquet.ParquetWriter;
 import org.apache.avro.Schema;
+import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
@@ -28,16 +30,18 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-class CsvRoundTripTest {
+public class CsvToParquet {
     @Test
-    void testReadWrite() throws IOException {
+    void testConvert() throws IOException {
         ClassLoader classLoader = getClass().getClassLoader();
         File csvInputFile = new File(classLoader.getResource("samples/oecdpop.csv").getFile());
-        String csvOutputFile = File.createTempFile("popFromCsv", ".csv").getAbsolutePath();
+
+        String parquetOutputFile = File.createTempFile("popFromCsv", ".parquet").getAbsolutePath();
+        System.out.println("parquetOutputFile: " + parquetOutputFile);
+
         String schemaFile = classLoader.getResource("samples/oecdpop.avsc").getFile();
         Schema schema = new AvroSchemaExtractor().getAvroSchema(schemaFile);
         List<Map<String, Object>> records = new CsvReader(schema, true).read(csvInputFile.getAbsolutePath());
-        System.out.println("csvOutputFile: " + csvOutputFile);
-        new CsvWriter(schema, true).write(records, csvOutputFile);
+        new ParquetWriter(schema, CompressionCodecName.GZIP).write(records, parquetOutputFile);
     }
 }

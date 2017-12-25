@@ -17,10 +17,9 @@
  * under the License.
  */
 
-package io.github.msayag.csv;
+package io.github.msayag.json;
 
-import io.github.msayag.AvroSchemaExtractor;
-import org.apache.avro.Schema;
+import io.github.msayag.parquet.ParquetReader;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
@@ -28,16 +27,15 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-class CsvRoundTripTest {
+public class ParquetToJson {
     @Test
-    void testReadWrite() throws IOException {
+    void testConvert() throws IOException {
         ClassLoader classLoader = getClass().getClassLoader();
-        File csvInputFile = new File(classLoader.getResource("samples/oecdpop.csv").getFile());
-        String csvOutputFile = File.createTempFile("popFromCsv", ".csv").getAbsolutePath();
-        String schemaFile = classLoader.getResource("samples/oecdpop.avsc").getFile();
-        Schema schema = new AvroSchemaExtractor().getAvroSchema(schemaFile);
-        List<Map<String, Object>> records = new CsvReader(schema, true).read(csvInputFile.getAbsolutePath());
-        System.out.println("csvOutputFile: " + csvOutputFile);
-        new CsvWriter(schema, true).write(records, csvOutputFile);
+        File jsonInputFile = new File(classLoader.getResource("samples/oecdpop.parquet").getFile());
+        String cvsOutputFile = File.createTempFile("popFromJson", ".json").getAbsolutePath();
+        List<Map<String, Object>> records = new ParquetReader().read(jsonInputFile.getAbsolutePath());
+
+        System.out.println("cvsOutputFile: " + cvsOutputFile);
+        new JsonWriter().write(records, cvsOutputFile);
     }
 }

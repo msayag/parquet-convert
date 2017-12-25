@@ -16,13 +16,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
-/*
- * Based on parquet-cli:org.apache.parquet.cli.BaseCommand
- */
-package io.github.msayag;
+package io.github.msayag.parquet;
 
 import com.google.common.io.CharStreams;
+import io.github.msayag.AvroSchemaExtractor;
+import io.github.msayag.Reader;
 import org.apache.avro.Schema;
 import org.apache.avro.file.DataFileReader;
 import org.apache.avro.generic.GenericData;
@@ -32,18 +30,58 @@ import org.apache.hadoop.fs.Path;
 import org.apache.parquet.avro.AvroParquetReader;
 import org.apache.parquet.avro.AvroReadSupport;
 import org.apache.parquet.cli.json.AvroJsonReader;
+import org.apache.parquet.cli.util.Expressions;
 import org.apache.parquet.cli.util.Formats;
-import org.apache.parquet.cli.util.Schemas;
-import org.apache.parquet.hadoop.ParquetReader;
 
 import java.io.*;
+import java.nio.ByteBuffer;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
-public class ParquetUtil {
-    private Configuration conf = new Configuration();
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static java.util.stream.Collectors.toList;
+import static org.apache.parquet.cli.util.Expressions.select;
 
-    protected <D> Iterable<D> openDataFile(final String source, Schema projection)
+public class ParquetReader implements Reader {
+
+    @Override
+    public List<Map<String, Object>> read(String sourceFile) throws IOException {
+        return read(sourceFile, Integer.MAX_VALUE);
+    }
+
+    public List<Map<String, Object>> read(String source, long numRecords) throws IOException {
+        return read(source, numRecords, List.of());
+    }
+
+    public List<Map<String, Object>> read(String source, long numRecords, List<String> columns) throws IOException {
+        Schema schema = new AvroSchemaExtractor().getAvroSchema(source);
+        Schema projection = Expressions.filterSchema(schema, columns);
+
+        Iterable<Object> reader = openDataFile(source, projection);
+        try {
+            return StreamSupport.stream(reader.spliterator(), false)
+                    .limit(numRecords)
+                    .map(record -> {
+                        if (columns == null || columns.size() != 1) {
+                            return toMap(record);
+                        } else {
+                            String column = columns.get(0);
+                            Object value = select(projection, record, column);
+                            return Map.of(column, value);
+                        }
+                    }).collect(toList());
+        } finally {
+            if (reader instanceof Closeable) {
+                ((Closeable) reader).close();
+            }
+        }
+    }
+
+    private  <D> Iterable<D> openDataFile(final String source, Schema projection)
             throws IOException {
         Formats.Format format;
         try (InputStream in = new FileInputStream(source)) {
@@ -51,10 +89,10 @@ public class ParquetUtil {
         }
         switch (format) {
             case PARQUET:
-                // TODO: add these to the reader builder
+                Configuration conf = new Configuration();
                 AvroReadSupport.setRequestedProjection(conf, projection);
                 AvroReadSupport.setAvroReadSchema(conf, projection);
-                final ParquetReader<D> parquet = AvroParquetReader.<D>builder(new Path(source))
+                final org.apache.parquet.hadoop.ParquetReader<D> parquet = AvroParquetReader.<D>builder(new Path(source))
                         .disableCompatibility()
                         .withDataModel(GenericData.get())
                         .withConf(conf)
@@ -117,30 +155,23 @@ public class ParquetUtil {
         }
     }
 
-    public Schema getAvroSchema(String source) throws IOException {
-        try (InputStream in = new FileInputStream(source)) {
-            Formats.Format format = getFormat(source);
-            switch (format) {
-                case PARQUET:
-                    return Schemas.fromParquet(conf, new File(source).toURI());
-                case AVRO:
-                    return Schemas.fromAvro(in);
-                case TEXT:
-                    if (source.endsWith("avsc")) {
-                        return Schemas.fromAvsc(in);
-                    } else if (source.endsWith("json")) {
-                        return Schemas.fromJSON("json", in);
-                    }
-                default:
-                    throw new IllegalArgumentException(String.format(
-                            "Could not determine file format of %s.", source));
-            }
-        }
+    private Map<String, Object> toMap(Object o) {
+        GenericData.Record record = (GenericData.Record) o;
+        Schema schema = record.getSchema();
+        List<Schema.Field> fields = schema.getFields();
+        return fields.stream()
+                .collect(Collectors.toMap(
+                        field -> field.name(),
+                        field -> toObject(record.get(field.pos()))
+                ));
     }
 
-    private Formats.Format getFormat(String source) throws IOException {
-        try (InputStream in = new FileInputStream(source)) {
-            return Formats.detectFormat(in);
+    private Object toObject(Object value) {
+        if (value instanceof ByteBuffer) {
+            byte[] bytes = ((ByteBuffer) value).array();
+            return new String(bytes, ISO_8859_1);
         }
+        return value;
     }
 }
+

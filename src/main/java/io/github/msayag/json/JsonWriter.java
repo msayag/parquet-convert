@@ -21,7 +21,7 @@ package io.github.msayag.json;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.msayag.ParquetReader;
+import io.github.msayag.Writer;
 
 import java.io.BufferedWriter;
 import java.io.FileOutputStream;
@@ -30,9 +30,9 @@ import java.io.OutputStreamWriter;
 import java.util.List;
 import java.util.Map;
 
-public class ParquetToJsonConverter {
-    public void convert(String parquetFile, String jsonOutputFile) throws IOException {
-        List<Map<String, Object>> records = new ParquetReader().read(parquetFile);
+public class JsonWriter implements Writer {
+    @Override
+    public void write(List<Map<String, Object>> records, String jsonOutputFile) throws IOException {
         try (FileOutputStream fos = new FileOutputStream(jsonOutputFile);
              BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(fos))) {
             ObjectMapper mapper = new ObjectMapper();

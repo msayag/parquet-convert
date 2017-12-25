@@ -1,12 +1,11 @@
 package io.github.msayag.json;
 
-import io.github.msayag.ParquetUtil;
-import org.apache.avro.Schema;
-import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
 public class JsonRoundTripTest {
     @Test
@@ -14,13 +13,9 @@ public class JsonRoundTripTest {
         ClassLoader classLoader = getClass().getClassLoader();
         File jsonInputFile = new File(classLoader.getResource("samples/oecdpop.json").getFile());
         String tmpFilePrefix = File.createTempFile("popFromJson", "").getAbsolutePath();
-        String parquetTmpFile = tmpFilePrefix + ".parquet";
-        String schemaFile = classLoader.getResource("samples/oecdpop.avsc").getFile();
-        Schema schema = new ParquetUtil().getAvroSchema(schemaFile);
-        new JsonToParquetConverter().convert(jsonInputFile.getAbsolutePath(), parquetTmpFile, schema, CompressionCodecName.GZIP);
+        List<Map<String, Object>> records = new JsonReader().read(jsonInputFile.getAbsolutePath());
         String jsonOutputFile = tmpFilePrefix + ".json";
-        System.out.println("parquetTmpFile: " + parquetTmpFile);
         System.out.println("jsonOutputFile: " + jsonOutputFile);
-        new ParquetToJsonConverter().convert(parquetTmpFile, jsonOutputFile);
+        new JsonWriter().write(records, jsonOutputFile);
     }
 }

@@ -24,9 +24,8 @@
 package io.github.msayag.csv;
 
 import com.opencsv.CSVReader;
-import io.github.msayag.ParquetWriter;
+import io.github.msayag.Reader;
 import org.apache.avro.Schema;
-import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 
 import java.io.FileReader;
 import java.io.IOException;
@@ -37,21 +36,27 @@ import java.util.stream.StreamSupport;
 
 import static java.util.stream.Collectors.toList;
 
-public class CsvToParquetConverter {
+public class CsvReader implements Reader {
+    private Schema schema;
+    private boolean hasHeader;
 
-    public void convert(String csvFile, boolean hasHeader, String outputParquetFile, Schema schema, CompressionCodecName codec) throws IOException {
-        List<Map<String, Object>> records;
+    public CsvReader(Schema schema, boolean hasHeader) {
+        this.schema = schema;
+        this.hasHeader = hasHeader;
+    }
+
+    @Override
+    public List<Map<String, Object>> read(String csvFile) throws IOException {
         try (CSVReader reader = new CSVReader(new FileReader(csvFile))) {
             if (hasHeader) {
                 skipHeader(reader);
             }
             String[] fieldNames = extractFieldNames(schema);
             Schema[] fieldTypes = extractFieldTypes(schema);
-            records = StreamSupport.stream(reader.spliterator(), false)
+            return StreamSupport.stream(reader.spliterator(), false)
                     .map(fields -> toMap(fields, fieldNames, fieldTypes))
                     .collect(toList());
         }
-        new ParquetWriter().write(records, outputParquetFile, schema, codec);
     }
 
     private String[] extractFieldNames(Schema schema) {

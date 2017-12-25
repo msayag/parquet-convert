@@ -16,8 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package io.github.msayag;
+package io.github.msayag.parquet;
 
+import io.github.msayag.Writer;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
 import org.apache.hadoop.conf.Configuration;
@@ -39,7 +40,7 @@ import static org.apache.parquet.column.ParquetProperties.WriterVersion.PARQUET_
 import static org.apache.parquet.hadoop.ParquetWriter.DEFAULT_BLOCK_SIZE;
 import static org.apache.parquet.hadoop.ParquetWriter.DEFAULT_PAGE_SIZE;
 
-public class ParquetWriter {
+public class ParquetWriter implements Writer {
 
     List<String> columns;
     boolean overwrite = true;
@@ -47,8 +48,16 @@ public class ParquetWriter {
     int rowGroupSize = DEFAULT_BLOCK_SIZE;
     int pageSize = DEFAULT_PAGE_SIZE;
     int dictionaryPageSize = DEFAULT_PAGE_SIZE;
+    private Schema schema;
+    private CompressionCodecName codec;
 
-    public void write(List<Map<String, Object>> items, String outputPath, Schema schema, CompressionCodecName codec) throws IOException {
+    public ParquetWriter(Schema schema, CompressionCodecName codec) {
+        this.schema = schema;
+        this.codec = codec;
+    }
+
+    @Override
+    public void write(List<Map<String, Object>> items, String outputPath) throws IOException {
         Schema projection = filterSchema(schema, columns);
 
         Path outPath = new Path(outputPath);

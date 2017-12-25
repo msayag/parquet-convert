@@ -18,8 +18,7 @@
  */
 package io.github.msayag.csv;
 
-import io.github.msayag.ParquetReader;
-import io.github.msayag.ParquetUtil;
+import io.github.msayag.Writer;
 import org.apache.avro.Schema;
 
 import java.io.BufferedWriter;
@@ -32,12 +31,19 @@ import java.util.Map;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
-public class ParquetToCsvConverter {
-    public void convert(String parquetFile, String csvOutputFile, boolean createHeader) throws IOException {
-        List<Map<String, Object>> records = new ParquetReader().read(parquetFile);
+public class CsvWriter implements Writer {
+    private Schema schema;
+    private boolean createHeader;
+
+    public CsvWriter(Schema schema, boolean createHeader) {
+        this.schema = schema;
+        this.createHeader = createHeader;
+    }
+
+    @Override
+    public void write(List<Map<String, Object>> records, String csvOutputFile) throws IOException {
         try (FileOutputStream fos = new FileOutputStream(csvOutputFile);
              BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(fos))) {
-            Schema schema = new ParquetUtil().getAvroSchema(parquetFile);
             List<String> fieldNames = getFieldNames(schema);
             if (createHeader) {
                 createHeader(writer, fieldNames);
