@@ -1,0 +1,18 @@
+{
+  "location": "SVK",
+  "indicator": "POP",
+  "subject": "MEN",
+  "measure": "MLN_PER",
+  "frequency": "A",
+  "time": 1950,
+  "value": 1.67897
+}
+{
+"location": "SVK",
+"indicator": "POP",
+"subject": "WOMEN",
+"measure": "MLN_PER",
+"frequency": "A",
+"time": 1950,
+"value": 1.784476
+}
