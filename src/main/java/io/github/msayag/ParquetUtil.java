@@ -45,69 +45,75 @@ public class ParquetUtil {
 
     protected <D> Iterable<D> openDataFile(final String source, Schema projection)
             throws IOException {
+        Formats.Format format;
         try (InputStream in = new FileInputStream(source)) {
-            Formats.Format format = Formats.detectFormat(in);
-            switch (format) {
-                case PARQUET:
-                    // TODO: add these to the reader builder
-                    AvroReadSupport.setRequestedProjection(conf, projection);
-                    AvroReadSupport.setAvroReadSchema(conf, projection);
-                    final ParquetReader<D> parquet = AvroParquetReader.<D>builder(new Path(source))
-                            .disableCompatibility()
-                            .withDataModel(GenericData.get())
-                            .withConf(conf)
-                            .build();
-                    return new Iterable<D>() {
-                        @Override
-                        public Iterator<D> iterator() {
-                            return new Iterator<>() {
-                                private boolean hasNext = false;
-                                private D next = advance();
+            format = Formats.detectFormat(in);
+        }
+        switch (format) {
+            case PARQUET:
+                // TODO: add these to the reader builder
+                AvroReadSupport.setRequestedProjection(conf, projection);
+                AvroReadSupport.setAvroReadSchema(conf, projection);
+                final ParquetReader<D> parquet = AvroParquetReader.<D>builder(new Path(source))
+                        .disableCompatibility()
+                        .withDataModel(GenericData.get())
+                        .withConf(conf)
+                        .build();
+                return new Iterable<>() {
+                    @Override
+                    public Iterator<D> iterator() {
+                        return new Iterator<>() {
+                            private boolean hasNext = false;
+                            private D next = advance();
 
-                                @Override
-                                public boolean hasNext() {
-                                    return hasNext;
+                            @Override
+                            public boolean hasNext() {
+                                return hasNext;
+                            }
+
+                            @Override
+                            public D next() {
+                                if (!hasNext) {
+                                    throw new NoSuchElementException();
                                 }
+                                D toReturn = next;
+                                this.next = advance();
+                                return toReturn;
+                            }
 
-                                @Override
-                                public D next() {
-                                    if (!hasNext) {
-                                        throw new NoSuchElementException();
-                                    }
-                                    D toReturn = next;
-                                    this.next = advance();
-                                    return toReturn;
+                            private D advance() {
+                                try {
+                                    D next = parquet.read();
+                                    this.hasNext = (next != null);
+                                    return next;
+                                } catch (IOException e) {
+                                    throw new RuntimeException(
+                                            "Failed while reading Parquet file: " + source, e);
                                 }
+                            }
 
-                                private D advance() {
-                                    try {
-                                        D next = parquet.read();
-                                        this.hasNext = (next != null);
-                                        return next;
-                                    } catch (IOException e) {
-                                        throw new RuntimeException(
-                                                "Failed while reading Parquet file: " + source, e);
-                                    }
-                                }
-
-                                @Override
-                                public void remove() {
-                                    throw new UnsupportedOperationException("Remove is not supported");
-                                }
-                            };
-                        }
-                    };
-
-                case AVRO:
-                    return DataFileReader.openReader(new File(source), new GenericDatumReader<>(projection));
-
-                default:
-                    if (source.endsWith("json")) {
-                        return new AvroJsonReader<>(in, projection);
-                    } else {
-                        return (Iterable) CharStreams.readLines(new InputStreamReader(in));
+                            @Override
+                            public void remove() {
+                                throw new UnsupportedOperationException("Remove is not supported");
+                            }
+                        };
                     }
-            }
+                };
+
+            case AVRO:
+                return DataFileReader.openReader(new File(source), new GenericDatumReader<>(projection));
+
+            default:
+                InputStream in = new FileInputStream(source);
+                if (source.endsWith("json")) {
+                    return new AvroJsonReader<>(in, projection);
+                } else {
+                    try {
+                        return (Iterable<D>) CharStreams.readLines(new InputStreamReader(in));
+                    } finally {
+                        in.close();
+                    }
+                }
         }
     }
 
