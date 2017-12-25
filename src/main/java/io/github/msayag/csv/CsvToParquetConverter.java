@@ -47,10 +47,9 @@ public class CsvToParquetConverter {
             }
             String[] fieldNames = extractFieldNames(schema);
             Schema[] fieldTypes = extractFieldTypes(schema);
-            records =
-                    StreamSupport.stream(reader.spliterator(), false)
-                            .map(fields -> toMap(fields, fieldNames, fieldTypes))
-                            .collect(toList());
+            records = StreamSupport.stream(reader.spliterator(), false)
+                    .map(fields -> toMap(fields, fieldNames, fieldTypes))
+                    .collect(toList());
         }
         new ParquetWriter().write(records, outputParquetFile, schema, codec);
     }
