@@ -42,7 +42,6 @@ import static org.apache.parquet.hadoop.ParquetWriter.DEFAULT_PAGE_SIZE;
 
 public class ParquetWriter implements Writer {
 
-    List<String> columns;
     boolean overwrite = true;
     boolean v2 = true;
     int rowGroupSize = DEFAULT_BLOCK_SIZE;
@@ -58,6 +57,10 @@ public class ParquetWriter implements Writer {
 
     @Override
     public void write(List<Map<String, Object>> items, String outputPath) throws IOException {
+        write(items, outputPath, null);
+    }
+
+    public void write(List<Map<String, Object>> items, String outputPath, List<String> columns) throws IOException {
         Schema projection = filterSchema(schema, columns);
 
         Path outPath = new Path(outputPath);
