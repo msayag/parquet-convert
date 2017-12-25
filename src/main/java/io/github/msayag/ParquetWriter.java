@@ -55,7 +55,7 @@ public class ParquetWriter {
         Configuration conf = new Configuration();
         FileSystem outFS = outPath.getFileSystem(conf);
         if (overwrite && outFS.exists(outPath)) {
-            outFS.delete(outPath);
+            outFS.delete(outPath, true);
         }
 
         try (org.apache.parquet.hadoop.ParquetWriter<Record> writer = AvroParquetWriter
@@ -83,7 +83,7 @@ public class ParquetWriter {
                     });
                     writer.write(record);
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    throw new RuntimeException(e);
                 }
             });
         }
