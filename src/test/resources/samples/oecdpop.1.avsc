@@ -1,0 +1,7 @@
+{
+    "type":"record",
+    "name":"PopulationRecord",
+    "fields":[
+        {"name":"location","type":"bytes"}
+    ]
+}
